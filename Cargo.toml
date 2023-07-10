@@ -2,10 +2,22 @@
 name = "sortYoutubeViewsOfPlaylist"
 version = "0.1.0"
 edition = "2021"
+authors = ["Viet Cuong | hosyvietcuong@gmail.com"]
+default-run = "main"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+dotenv = "0.15.0"
+reqwest = "0.11"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+serde_json = "1.0"
+futures = "0.3"
+num-format = "0.4"
+
+[[bin]]
+name = "main"
+path = "src/main.rs"
 
 [[bin]]
 name = "draft"

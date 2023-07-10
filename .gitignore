@@ -1,2 +1,7 @@
 .env
 /target
+output.json
+/src/draft.rs
+data.json
+playlist_data.json
+.vscode
