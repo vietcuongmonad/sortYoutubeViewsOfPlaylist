@@ -11,16 +11,21 @@ use num_format::{Locale, ToFormattedString};
 async fn get_video_data(
     playlist_data: &serde_json::Value,
     developer_key: &str,
-) -> Result<Vec<(String, u64)>, Box<dyn std::error::Error>> {
-    let videos = stream::iter(playlist_data["items"].as_array().unwrap())
+) -> Result<Vec<(String, u64, String, String)>, Box<dyn std::error::Error>> {
+    let mut videos: Vec<(String, u64, String, String)> = stream::iter(playlist_data["items"].as_array().unwrap())
         .then(|item| async move {
             let title = item["snippet"]["title"].as_str().unwrap().to_string();
             let video_id = item["snippet"]["resourceId"]["videoId"].as_str().unwrap().to_string();
-            let view_count = get_view_count(video_id, developer_key).await?;
-            Ok::<_, Box<dyn std::error::Error>>((title, view_count))
+            let view_count = get_view_count(video_id.clone(), developer_key).await?;
+            let thumbnail = item["snippet"]["thumbnails"]["default"]["url"].as_str().unwrap_or("").to_string();
+            let video_url = format!("https://www.youtube.com/watch?v={}", video_id);
+            Ok::<_, Box<dyn std::error::Error>>((title, view_count, thumbnail, video_url))
         })
         .try_collect()
         .await?;
+
+    videos.sort_by(|a, b| b.1.cmp(&a.1));
+
     Ok(videos)
 }
 
@@ -33,6 +38,8 @@ async fn get_view_count(video_id: String, developer_key: &str) -> Result<u64, Bo
     );
     let response = reqwest::get(&url).await?.text().await?;
     let video_data: Value = serde_json::from_str(&response)?;
+
+    // print_pretty_json(&video_data).await?;
 
     let view_count = video_data["items"][0]["statistics"]["viewCount"]
         .as_str()
@@ -54,7 +61,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let developer_key = env::var("DEVELOPER_KEY").expect("DEVELOPER_KEY must be set");
 
     let playlist_id = "PL4bD_p5B-nBnHmJCqkdhve5TAoop6I57P";
-    let max_vid = 3;
+    let max_vid = 200;
 
     let url = format!(
         "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults={}&playlistId={}&key={}", 
@@ -67,31 +74,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let playlist_data: Value = serde_json::from_str(&response)?;
 
     let videos = get_video_data(&playlist_data, &developer_key).await.unwrap();
-
-    for (title, view_count) in videos {
-        println!("{}: {}", title, view_count.to_formatted_string(&Locale::en));
+    
+    for (title, view_count, thumbnail, video_url) in videos {
+        println!("### {}: {}\n", title, view_count.to_formatted_string(&Locale::en));
+        println!("[![thumbnail]({})]({})\n", thumbnail, video_url);
     }
 
     Ok(())
 }
-
-// use reqwest;
-// use serde_json::{Value};
-
-// #[tokio::main]
-// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//     let api_key = "YOUR_API_KEY";
-//     let playlist_id = "PL4bD_p5B-nBnHmJCqkdhve5TAoop6I57P";
-//     let url = format!("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId={}&key={}", playlist_id, api_key);
-    
-//     let response = reqwest::get(&url).await?.text().await?;
-//     let data: Value = serde_json::from_str(&response)?;
-    
-//     let video_ids: Vec<String> = data["items"].as_array().unwrap().iter().map(|item| {
-//         item["snippet"]["resourceId"]["videoId"].as_str().unwrap().to_string()
-//     }).collect();
-    
-//     println!("{:?}", video_ids);
-    
-//     Ok(())
-// }

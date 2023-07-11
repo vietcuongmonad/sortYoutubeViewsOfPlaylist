@@ -5,3 +5,5 @@ output.json
 data.json
 playlist_data.json
 .vscode
+output.md
+video_data.json
