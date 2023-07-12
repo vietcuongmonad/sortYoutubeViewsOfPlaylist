@@ -5,24 +5,25 @@ use std::env;
 use dotenv::dotenv;
 use serde_json::Value;
 
-use futures::{stream, StreamExt, TryStreamExt};
 use num_format::{Locale, ToFormattedString};
 
 async fn get_video_data(
     playlist_data: &serde_json::Value,
     developer_key: &str,
 ) -> Result<Vec<(String, u64, String, String)>, Box<dyn std::error::Error>> {
-    let mut videos: Vec<(String, u64, String, String)> = stream::iter(playlist_data["items"].as_array().unwrap())
-        .then(|item| async move {
-            let title = item["snippet"]["title"].as_str().unwrap().to_string();
-            let video_id = item["snippet"]["resourceId"]["videoId"].as_str().unwrap().to_string();
-            let view_count = get_view_count(video_id.clone(), developer_key).await?;
-            let thumbnail = item["snippet"]["thumbnails"]["default"]["url"].as_str().unwrap_or("").to_string();
-            let video_url = format!("https://www.youtube.com/watch?v={}", video_id);
-            Ok::<_, Box<dyn std::error::Error>>((title, view_count, thumbnail, video_url))
-        })
-        .try_collect()
-        .await?;
+    let items = playlist_data["items"].as_array().unwrap();
+
+    let mut videos = Vec::new();
+
+    for item in items {
+        let title = item["snippet"]["title"].as_str().unwrap().to_string();
+        let video_id = item["snippet"]["resourceId"]["videoId"].as_str().unwrap().to_string();
+        let view_count = get_view_count(video_id.clone(), developer_key).await?;
+        let thumbnail = item["snippet"]["thumbnails"]["default"]["url"].as_str().unwrap_or("").to_string();
+        let video_url = format!("https://www.youtube.com/watch?v={}", video_id);
+
+        videos.push((title, view_count, thumbnail, video_url));
+    }
 
     videos.sort_by(|a, b| b.1.cmp(&a.1));
 
@@ -55,13 +56,25 @@ async fn print_pretty_json(data: &Value) -> Result<(), Box<dyn std::error::Error
     Ok(())
 }
 
+fn display_vid(videos: Vec<(String, u64, String, String)>, mut max_display_vid: u64) {
+    for (title, view_count, thumbnail, video_url) in videos {
+        println!("### {} \n### view count: {}\n", title, view_count.to_formatted_string(&Locale::en));
+        println!("[![thumbnail]({})]({})\n", thumbnail, video_url);
+
+        max_display_vid -= 1;
+        if max_display_vid == 0 {
+            break;
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let playlist_id = "PL4bD_p5B-nBnHmJCqkdhve5TAoop6I57P";
+    let max_vid = 20;
+
     dotenv().ok();
     let developer_key = env::var("DEVELOPER_KEY").expect("DEVELOPER_KEY must be set");
-
-    let playlist_id = "PL4bD_p5B-nBnHmJCqkdhve5TAoop6I57P";
-    let max_vid = 200;
 
     let url = format!(
         "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults={}&playlistId={}&key={}", 
@@ -75,10 +88,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let videos = get_video_data(&playlist_data, &developer_key).await.unwrap();
     
-    for (title, view_count, thumbnail, video_url) in videos {
-        println!("### {}: {}\n", title, view_count.to_formatted_string(&Locale::en));
-        println!("[![thumbnail]({})]({})\n", thumbnail, video_url);
-    }
+    display_vid(videos, max_vid);
 
     Ok(())
 }

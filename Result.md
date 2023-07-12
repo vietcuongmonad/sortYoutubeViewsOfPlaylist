@@ -1,14 +1,6 @@
-### Andrew Schulz - INFAMOUS (2022) FULL SPECIAL: 17,335,810
-
-[![thumbnail](https://i.ytimg.com/vi/rCZkp023MdY/default.jpg)](https://www.youtube.com/watch?v=rCZkp023MdY)
-
 ### Shane Gillis Live In Austin | Stand Up Comedy: 12,705,595
 
 [![thumbnail](https://i.ytimg.com/vi/zKUpf1Vx0vs/default.jpg)](https://www.youtube.com/watch?v=zKUpf1Vx0vs)
-
-### Mark Normand: Out To Lunch - Full Special: 12,313,247
-
-[![thumbnail](https://i.ytimg.com/vi/tDolNU89SXI/default.jpg)](https://www.youtube.com/watch?v=tDolNU89SXI)
 
 ### Joe List: I Hate Myself - Full Special: 9,135,458
 

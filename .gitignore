@@ -7,3 +7,4 @@ playlist_data.json
 .vscode
 output.md
 video_data.json
+Cargo.lock
